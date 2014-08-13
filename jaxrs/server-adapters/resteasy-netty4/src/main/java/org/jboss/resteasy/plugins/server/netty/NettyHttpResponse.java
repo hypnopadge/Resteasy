@@ -158,10 +158,20 @@ public class NettyHttpResponse implements HttpResponse
 
     public DefaultHttpResponse getDefaultHttpResponse()
     {
-        HttpResponseStatus status = HttpResponseStatus.valueOf(getStatus());
-        DefaultHttpResponse res = new DefaultHttpResponse(HTTP_1_1, status);
-        RestEasyHttpResponseEncoder.transformHeaders(this, res, providerFactory);
+        DefaultHttpResponse res = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.valueOf(getStatus()));
+        transformResponseHeaders(res);
         return res;
+    }
+
+    public DefaultHttpResponse getDefaultFullHttpResponse()
+    {
+        DefaultFullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.valueOf(getStatus()));
+        transformResponseHeaders(res);
+        return res;
+    }
+
+    private void transformResponseHeaders(io.netty.handler.codec.http.HttpResponse res) {
+        RestEasyHttpResponseEncoder.transformHeaders(this, res, providerFactory);
     }
 
     public void prepareChunkStream() {
@@ -178,8 +188,7 @@ public class NettyHttpResponse implements HttpResponse
             // if committed this means the output stream was used.
             future = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
         } else {
-            io.netty.handler.codec.http.HttpResponse response = getDefaultHttpResponse();
-            future = ctx.writeAndFlush(response);
+            future = ctx.writeAndFlush(getDefaultFullHttpResponse());
         }
 
         if (!isKeepAlive()) {
